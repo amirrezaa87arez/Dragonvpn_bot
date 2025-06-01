@@ -1,8 +1,7 @@
-import os
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-TOKEN = os.getenv("BOT_TOKEN")  # توکن از محیط گرفته میشه
+TOKEN = "7386747475:AAHKaQ37fCEhlb628U7DlJWIwgWAp1po5eg"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -33,6 +32,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == 'plan1':
         await query.edit_message_text(
             "✅ پلن انتخابی: ۱ کاربره نامحدود - ۹۹ هزار تومان\n"
+            "لطفاً مبلغ را به شماره کارت زیر واریز کنید:\n\n"
             "💳 6277 6013 6877 6066 - بنام رضوانی\n\n"
             "سپس عکس فیش واریزی را ارسال کنید تا سفارش شما بررسی شود."
         )
@@ -52,32 +52,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await start(update, context)
 
 def main():
-    from flask import Flask, request
-    import asyncio
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(button))
+    app.run_polling()
 
-    app = Flask(__name__)
-    application = Application.builder().token(TOKEN).build()
-
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CallbackQueryHandler(button))
-
-    @app.route(f"/webhook/{TOKEN}", methods=["POST"])
-    async def webhook():
-        await application.update_queue.put(Update.de_json(request.get_json(force=True), application.bot))
-        return "OK"
-
-    @app.route("/")
-    def index():
-        return "Bot is running!"
-
-    # ست کردن webhook
-    async def set_webhook():
-        await application.bot.set_webhook(f"https://dragonvpn-bot.onrender.com/webhook/{TOKEN}")
-
-    loop = asyncio.get_event_loop()
-    loop.create_task(set_webhook())
-
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
