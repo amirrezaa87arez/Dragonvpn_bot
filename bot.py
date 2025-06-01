@@ -1,14 +1,20 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+import os
+from flask import Flask, request
 
-TOKEN = "7386747475:AAHKaQ37fCEhlb628U7DlJWIwgWAp1po5eg"
+TOKEN = os.getenv("7386747475:AAHKaQ37fCEhlb628U7DlJWIwgWAp1po5eg")  # در Render از طریق Environment Variable ست کن
+APP_URL = os.getenv("https://dragonvpn-bot.onrender.com")  # مثل: https://your-app-name.onrender.com
 
-# پیام خوش‌آمد و منوی اصلی
+app = Flask(__name__)
+
+# تنظیمات ربات تلگرام
+telegram_app = Application.builder().token(TOKEN).build()
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🧾 خرید اشتراک", callback_data='buy')],
-        [InlineKeyboardButton("📘 آموزش اتصال", callback_data='howto')],
-        [InlineKeyboardButton("🛠 پشتیبانی", url="https://t.me/Psycho_remix1")]
+        [InlineKeyboardButton("📘 آموزش اتصال", url="https://t.me/amuzesh_dragonvpn")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
@@ -17,7 +23,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
-# مدیریت دکمه‌ها
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -41,32 +46,34 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == 'plan2':
         await query.edit_message_text(
             "✅ پلن انتخابی: ۲ کاربره نامحدود - ۱۱۵ هزار تومان\n"
-            "💳 6277 6013 6877 6066 - بنام رضوانی\n\n"
+            "💳 6277 6013 6877 6066 - بنام رضوانی\n"
             "سپس عکس فیش واریزی را ارسال کنید."
         )
     elif query.data == 'plan3':
         await query.edit_message_text(
             "✅ پلن انتخابی: ۳ کاربره نامحدود - ۱۶۹ هزار تومان\n"
-            "💳 6277 6013 6877 6066 - بنام رضوانی\n\n"
+            "💳 6277 6013 6877 6066 - بنام رضوانی\n"
             "سپس عکس فیش واریزی را ارسال کنید."
         )
-    elif query.data == 'howto':
-        await query.edit_message_text(
-            "📘 آموزش اتصال:\n\n"
-            "1️⃣ برنامه NapsternetV یا v2ray را نصب کنید.\n"
-            "2️⃣ کانفیگی که برایتان ارسال می‌شود را وارد کنید.\n"
-            "3️⃣ اتصال را فعال کنید.\n\n"
-            "در صورت سوال با پشتیبانی تماس بگیرید: @Psycho_remix1"
-        )
     elif query.data == 'back':
-        await start(query, context)
+        await start(update, context)
 
-# اجرای بات
-def main():
-    app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button))
-    app.run_polling()
+telegram_app.add_handler(CommandHandler("start", start))
+telegram_app.add_handler(CallbackQueryHandler(button))
 
-if __name__ == '__main__':
-    main()
+# روت وب‌هوک
+@app.route(f"/{TOKEN}", methods=["POST"])
+def webhook():
+    telegram_app.update_queue.put_nowait(Update.de_json(request.get_json(force=True), telegram_app.bot))
+    return "ok", 200
+
+# راه‌اندازی وب‌هوک هنگام اجرا
+@app.before_first_request
+def setup_webhook():
+    from telegram import Bot
+    bot = Bot(token=TOKEN)
+    bot.delete_webhook()
+    bot.set_webhook(url=f"{APP_URL}/{TOKEN}")
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
