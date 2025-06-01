@@ -1,13 +1,14 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-TOKEN = "7386747475:AAHKaQ37fCEhlb628U7DlJWIwgWAp1po5eg"  # توکن رباتت رو اینجا بذار
+TOKEN = "7386747475:AAHKaQ37fCEhlb628U7DlJWIwgWAp1po5eg"
 
-# /start command
+# پیام خوش‌آمد و منوی اصلی
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("🧾 خرید اشتراک", callback_data='buy')],
-        [InlineKeyboardButton("📘 آموزش اتصال", url="https://t.me/amuzesh_dragonvpn")]
+        [InlineKeyboardButton("📘 آموزش اتصال", callback_data='howto')],
+        [InlineKeyboardButton("🛠 پشتیبانی", url="https://t.me/Psycho_remix1")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
@@ -16,7 +17,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
-# دکمه‌های callback
+# مدیریت دکمه‌ها
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -49,40 +50,22 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "💳 6277 6013 6877 6066 - بنام رضوانی\n\n"
             "سپس عکس فیش واریزی را ارسال کنید."
         )
+    elif query.data == 'howto':
+        await query.edit_message_text(
+            "📘 آموزش اتصال:\n\n"
+            "1️⃣ برنامه NapsternetV یا v2ray را نصب کنید.\n"
+            "2️⃣ کانفیگی که برایتان ارسال می‌شود را وارد کنید.\n"
+            "3️⃣ اتصال را فعال کنید.\n\n"
+            "در صورت سوال با پشتیبانی تماس بگیرید: @Psycho_remix1"
+        )
     elif query.data == 'back':
-        await start(update, context)
+        await start(query, context)
 
-# پاسخ به پیام‌های متنی مثل منوی کیبورد پایین
-async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-
-    if "آموزش اتصال" in text:
-        await update.message.reply_text(
-            "📘 آموزش اتصال:\n"
-            "۱. برنامه NapsternetV یا v2ray را نصب کنید\n"
-            "۲. کانفیگی که برایتان ارسال می‌شود را وارد کنید\n"
-            "۳. اتصال را فعال کنید\n\n"
-            "⚠️ هر سوالی داشتید با پشتیبانی تماس بگیرید:\n@Psycho_remix1"
-        )
-    elif "خرید اشتراک" in text:
-        await update.message.reply_text(
-            "✅ پلن انتخابی: ۱ کاربره نامحدود - ۹۹ هزار تومان\n"
-            "💳 6277 6013 6877 6066 - بنام رضوانی\n\n"
-            "سپس عکس فیش واریزی را ارسال کنید تا سفارش شما بررسی شود."
-        )
-    elif "پشتیبانی" in text:
-        await update.message.reply_text(
-            "🛠 برای پشتیبانی به آیدی زیر پیام دهید:\n@Psycho_remix1"
-        )
-
-# شروع اپلیکیشن
+# اجرای بات
 def main():
     app = Application.builder().token(TOKEN).build()
-
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-
     app.run_polling()
 
 if __name__ == '__main__':
