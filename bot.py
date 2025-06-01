@@ -1,69 +1,61 @@
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-from aiogram import Bot, Dispatcher, types, executor
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-import config
+TOKEN = "7386747475:AAHKaQ37fCEhlb628U7DlJWIwgWAp1po5eg"
 
-bot = Bot(token=config.BOT_TOKEN)
-dp = Dispatcher(bot)
-
-# دکمه‌ها
-main_menu = ReplyKeyboardMarkup(resize_keyboard=True)
-main_menu.add("💳 خرید اشتراک", "📚 آموزش اتصال").add("🛠 پشتیبانی")
-
-plans_menu = ReplyKeyboardMarkup(resize_keyboard=True)
-plans_menu.add("۱ کاربره - ۹۹ هزار", "۲ کاربره - ۱۱۵ هزار", "۳ کاربره - ۱۶۹ هزار").add("🔙 بازگشت")
-
-@dp.message_handler(commands=['start'])
-async def send_welcome(message: types.Message):
-    await message.answer(
-        f"🌟 خوش آمدید به ربات فروش فیلترشکن امن و پرسرعت 💎\n"
-        f"برند: Dragon VPN\n\n"
-        f"از منوی زیر انتخاب کنید 👇",
-        reply_markup=main_menu
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("🧾 خرید اشتراک", callback_data='buy')],
+        [InlineKeyboardButton("📘 آموزش اتصال", url="https://t.me/amuzesh_dragonvpn")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        "🌟 خوش آمدید به ربات فروش فیلترشکن امن و پرسرعت 💎\n\n"
+        "از منوی زیر انتخاب کنید 👇",
+        reply_markup=reply_markup
     )
 
-@dp.message_handler(lambda msg: msg.text == "💳 خرید اشتراک")
-async def show_plans(message: types.Message):
-    await message.answer("لطفا یکی از پلن‌ها را انتخاب کنید 👇", reply_markup=plans_menu)
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
 
-@dp.message_handler(lambda msg: "کاربره" in msg.text)
-async def plan_selected(message: types.Message):
-    plan = message.text
-    price = plan.split("-")[1].strip()
-    await message.answer(
-        f"✅ پلن انتخابی: {plan}\n"
-        f"💳 لطفاً مبلغ {price} تومان را به شماره کارت زیر واریز کنید:\n\n"
-        f"💳 6277 6013 6877 6066\nبنام رضوانی\n\n"
-        f"سپس عکس فیش واریزی را ارسال کنید تا سفارش شما بررسی شود."
-    )
+    if query.data == 'buy':
+        keyboard = [
+            [InlineKeyboardButton("۱ کاربره نامحدود - ۹۹ هزار", callback_data='plan1')],
+            [InlineKeyboardButton("۲ کاربره نامحدود - ۱۱۵ هزار", callback_data='plan2')],
+            [InlineKeyboardButton("۳ کاربره نامحدود - ۱۶۹ هزار", callback_data='plan3')],
+            [InlineKeyboardButton("🔙 بازگشت", callback_data='back')]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text("لطفاً یکی از پلن‌ها را انتخاب کنید 👇", reply_markup=reply_markup)
 
-@dp.message_handler(lambda msg: msg.text == "🔙 بازگشت")
-async def back_to_main(message: types.Message):
-    await message.answer("بازگشت به منوی اصلی 👇", reply_markup=main_menu)
+    elif query.data == 'plan1':
+        await query.edit_message_text(
+            "✅ پلن انتخابی: ۱ کاربره نامحدود - ۹۹ هزار تومان\n"
+            "لطفاً مبلغ را به شماره کارت زیر واریز کنید:\n\n"
+            "💳 6277 6013 6877 6066 - بنام رضوانی\n\n"
+            "سپس عکس فیش واریزی را ارسال کنید تا سفارش شما بررسی شود."
+        )
+    elif query.data == 'plan2':
+        await query.edit_message_text(
+            "✅ پلن انتخابی: ۲ کاربره نامحدود - ۱۱۵ هزار تومان\n"
+            "💳 6277 6013 6877 6066 - بنام رضوانی\n"
+            "سپس عکس فیش واریزی را ارسال کنید."
+        )
+    elif query.data == 'plan3':
+        await query.edit_message_text(
+            "✅ پلن انتخابی: ۳ کاربره نامحدود - ۱۶۹ هزار تومان\n"
+            "💳 6277 6013 6877 6066 - بنام رضوانی\n"
+            "سپس عکس فیش واریزی را ارسال کنید."
+        )
+    elif query.data == 'back':
+        await start(update, context)
 
-@dp.message_handler(lambda msg: msg.text == "📚 آموزش اتصال")
-async def show_help(message: types.Message):
-    await message.answer(
-        "📘 آموزش اتصال:\n"
-        "۱. برنامه v2ray یا NapsternetV را نصب کنید\n"
-        "۲. کانفیگی که برایتان ارسال می‌شود را وارد کنید\n"
-        "۳. اتصال را فعال کنید\n\n"
-        "⚠️ هر سوالی داشتید با پشتیبانی تماس بگیرید: @Psycho_remix1"
-    )
-
-@dp.message_handler(lambda msg: msg.text == "🛠 پشتیبانی")
-async def support(message: types.Message):
-    await message.answer("🔧 برای پشتیبانی با این آیدی در تماس باشید:\n@Psycho_remix1")
-
-@dp.message_handler(content_types=types.ContentType.PHOTO)
-async def receive_receipt(message: types.Message):
-    await message.forward(config.ADMIN_ID)
-    await bot.send_message(
-        config.ADMIN_ID,
-        f"📥 فیش جدید از طرف @{message.from_user.username or message.from_user.full_name}\n"
-        f"آیدی عددی: {message.from_user.id}"
-    )
-    await message.answer("✅ فیش شما دریافت شد و در حال بررسی است.\nپس از تأیید، کانفیگ برای شما ارسال خواهد شد.")
+def main():
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(button))
+    app.run_polling()
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    main()
